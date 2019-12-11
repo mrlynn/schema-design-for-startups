@@ -1,0 +1,9 @@
+var config = {
+	dbhost: "localhost",
+	dbname: "library",
+	dbport: 27017,
+	title: 'MEANStore',
+	keywords: "your,keywords,here,meanstore,ecommerce,shoppingcart",
+	copyright: "MongoDB"
+};
+module.exports = config;
