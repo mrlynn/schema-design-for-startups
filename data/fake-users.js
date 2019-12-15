@@ -1,7 +1,7 @@
 var User = require('../models/user');
 var mongoose = require('mongoose');
 var faker = require('faker');
-var Config = require('../config/config');
+var config = require('../config/config');
 const dotenv = require('dotenv');
 const chalk = require('chalk');
 var winston = require("winston");
@@ -24,8 +24,7 @@ dotenv.config({
 
 "use strict";
 
-mongoose.Promise = global.Promise;
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI);
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true,  useUnifiedTopology: true });
 mongoose.connection.on('error', () => {
   console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
   logger.log('error','%s MongoDB connection error. Please make sure MongoDB is running.');
@@ -43,6 +42,12 @@ for (var i=0; i < maxUsers; i++) {
 	var user = new User({
 		firstName: faker.name.firstName(),
 		lastName: faker.name.lastName(),
+		address: {
+			street: addr1,
+			city: city,
+			state: state,
+			zipcode: zipcode
+		},
 		email: faker.internet.email()
 	});
 	user.save(function(err,newuser) {

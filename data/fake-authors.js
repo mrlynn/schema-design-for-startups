@@ -5,34 +5,27 @@ var Config = require("../config/config");
 const dotenv = require("dotenv");
 const chalk = require("chalk");
 var winston = require("winston");
-
-var logger = new winston.createLogger({
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "hackathon.log" })
-  ]
-});
 const yargs = require("yargs");
 
 const options = yargs
-  .usage("Usage: fake-authors.js -c <Count of Authors to created>")
-  .option("c", {
-    alias: "count",
-    describe: "Authors to be Created",
-    type: "number",
-    demandOption: true
-  }).argv;
+ .usage("Usage: fake-books.js -c <Count of Books to created>")
+ .option("c", { alias: "count", describe: "Books to be Created", type: "number", demandOption: true })
+ .argv;
+
+var logger = new (winston.createLogger)({
+    transports: [
+        new (winston.transports.Console)(),
+        new (winston.transports.File)({ filename: 'hackathon.log' })
+    ]
+});
 
 dotenv.config({
-  path: ".env"
+    path: '.env'
 });
 
-("use strict");
+"use strict";
 
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true,  useUnifiedTopology: true });
 mongoose.connection.on("error", () => {
   console.log(
     "%s MongoDB connection error. Please make sure MongoDB is running.",

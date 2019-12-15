@@ -1,4 +1,8 @@
-var Author = require('../models/author');
+/**
+ * Fake-reviews part 2 - this script generates reviews as embedded documents inside the book collection demonstrating the embedding approach.
+ * This approach would optimize for lookups when the book was the primary data element sought but reviews were also required.
+ */
+var User = require('../models/user');
 var User = require('../models/user');
 var Book = require('../models/book');
 var mongoose = require('mongoose');
@@ -27,23 +31,27 @@ mongoose.connection.on('error', () => {
 	logger.log('error', '%s MongoDB connection error. Please make sure MongoDB is running.');
 	process.exit();
 });
-
+/** 
+* Start by looping through all books - reviews, in this case (b) will be placed into the book documents.
+*/
 Book.find({}, function (err, book) {
     if (err) {
         console.log("Error " + err.message);
     }
-    var pages = Math.floor(Math.random() * 600) ; // get a random availability bool
-    Author.countDocuments().exec(function (err, count) {
+    /**
+     * Now that we have a book, let's get a randomly selected user and create a review.
+     */
+    User.countDocuments().exec(function (err, count) {
         // Get a random entry
         var random = Math.floor(Math.random() * count)
         // Again query all users but only fetch one offset by our random #
-        Author.findOne().skip(random).exec(
-            function (err, author) {
+        User.findOne().skip(random).exec(
+            function (err, user) {
                 if (err) {
                     console.log('error: ' + err.message);
                 }
                 review = {
-                    user: author._id,
+                    user: user._id,
                     text: faker.lorem.words()
                 }
                 Book.updateOne(

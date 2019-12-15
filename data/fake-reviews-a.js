@@ -1,100 +1,104 @@
-var Author = require('../models/author');
-var User = require('../models/user');
+/**
+ * Fake-reviews part 1 - this script generates reviews as a separate collection demonstrating the linking and reference approach.
+ * Take note that there are only 3 fields book, user, and text. Book, and User are objectids from other collections.
+ * This approach would optimize for lookups when the review was the primary data element sought.
+ */
 var Book = require('../models/book');
 var Review = require('../models/review');
+var User = require('../models/user');
+var Author = require('../models/author');
 var mongoose = require('mongoose');
-var async = require('async');
 var faker = require('faker');
 var Config = require('../config/config');
 const dotenv = require('dotenv');
 const chalk = require('chalk');
 var winston = require("winston");
-
-var logger = new (winston.createLogger)({
-    transports: [
-      new (winston.transports.Console)(),
-      new (winston.transports.File)({ filename: process.env.title + '.log' })
-    ]
-});
+var slug = require('mongoose-slug-generator');
 const yargs = require("yargs");
 
 const options = yargs
- .usage("Usage: fake-reviews.js -c <Count of Reviews to created>")
- .option("c", { alias: "count", describe: "Reviews to be Created", type: "number", demandOption: true })
+ .usage("Usage: fake-books.js -c <Count of Books to created>")
+ .option("c", { alias: "count", describe: "Books to be Created", type: "number", demandOption: true })
  .argv;
 
-dotenv.config({
-	path: '.env'
+var logger = new (winston.createLogger)({
+    transports: [
+        new (winston.transports.Console)(),
+        new (winston.transports.File)({ filename: 'hackathon.log' })
+    ]
 });
 
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, {
-    useUnifiedTopology: true,
-    useNewUrlParser: true
+dotenv.config({
+    path: '.env'
 });
+
+"use strict";
+
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true,  useUnifiedTopology: true });
 mongoose.connection.on('error', () => {
-	console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
-	logger.log('error', '%s MongoDB connection error. Please make sure MongoDB is running.');
-	process.exit();
+    console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
+    logger.log('error', '%s MongoDB connection error. Please make sure MongoDB is running.');
+    process.exit();
 });
-mongoose.set('debug', true);
+console.log("Debug: " + process.env.debug); 
+mongoose.set('debug', false); //not workig - always true
+
+var done = 0;
+var howMany = `${options.count}`;
 
 async function main() {
-    const howMany = `${options.count}`;
-    var done = 0;
-    var totalUsers = 0;
-    for (done=0;done<howMany;done++) {
-        // get a random book
-        Book.aggregate([{$sample: {size: 1}}]).exec(function (err,book) {
-            if (err) {
-                console.log("Error " + err.message);
-                exit();
-            }
-            if (done >= howMany) {
-                exit();
-            }
-            console.log("Making review #" + done);
+    for (var i = 0; i < howMany; i++) {
+        var title = faker.lorem.text();
+        Book.countDocuments().exec(async function (err, bcount) {
             // Get a random entry
-            // Again query all users but only fetch one offset by our random #
-            User.aggregate([{$sample: {size: 1}}]).exec(function (err,user) {
-
-                if (err) {
-                    console.log('error: ' + err.message);
-                    exit();
+            var available = Math.floor(Math.random() * 1) ; // get a random availability bool
+            var date = faker.date.between('1930-01-01', '2018-12-31');
+            var randomb = Math.floor(Math.random() * bcount)
+            Book.findOne().skip(randomb).exec(
+                async function (err, book) {
+                    User.countDocuments().exec(async function(err,ucount) {
+                        var randomu = Math.floor(Math.random() * ucount)
+                        User.findOne().skip(randomu).exec(
+                            async function(err,user) {
+                                var review = new Review({
+                                    user: user._id,
+                                    book: book._id,
+                                    text: faker.lorem.words()
+                                });
+                                review.save(function (err, newbook) {
+                                    if (err) {
+                                        console.log('error: ', err.message);
+                                    }
+                                    done++;
+                                    if (done >= howMany) {
+                                        exit();
+                                    }
+                                });
+                            }
+                        )
+                    });
                 }
-                console.log("Selected user: " + user.firstName + ' ' + user.lastName);
-
-                review = new Review({
-                    user: user._id,
-                    book: book._id,
-                    rating: faker.random.number(5),
-                    text: faker.lorem.paragraph(),
-                    created_at: Date.now()
-                });
-        
-                review.save(function(err,newreview) {
-                    if (err) {
-                        console.log("Error: " + err.message);
-                        exit();
-                    }
-                    console.log("New Review" + JSON.stringify(newreview));
-                });
-            }
-            );
-            
+            )
         });
-        if(done>=totalUsers) {
-            exit();
-        }
     }
-    
 }
 function exit() {
     mongoose.disconnect();
     exit;
-}
-function userCount() {
-    User.countDocuments().exec( function (err, countUsers) {
-        console.log("Total Users: " + countUsers);
-        return countUsers;
+};
+async function getRandomUser(callback) {
+    User.countDocuments().exec(function (err, count) {
+        var random = Math.floor(Math.random() * count)
+        // Again query all users but only fetch one offset by our random #
+        User.findOne().skip(random).exec(function(err,user) {
+            if (err) {
+                console.log("No reading of the user");
+                return -1;
+            }
+            return user;
+        });
     });
+    callback(null, user);
 }
+
+main().catch(console.err);

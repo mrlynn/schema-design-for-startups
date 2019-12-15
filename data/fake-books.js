@@ -7,7 +7,6 @@ const dotenv = require('dotenv');
 const chalk = require('chalk');
 var winston = require("winston");
 var slug = require('mongoose-slug-generator');
-var moment = require('moment');
 const yargs = require("yargs");
 
 const options = yargs
@@ -28,7 +27,7 @@ dotenv.config({
 
 "use strict";
 
-mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGODB_URI || process.env.MONGOLAB_URI, { useNewUrlParser: true,  useUnifiedTopology: true });
 mongoose.connection.on('error', () => {
     console.log('%s MongoDB connection error. Please make sure MongoDB is running.', chalk.red('✗'));
     logger.log('error', '%s MongoDB connection error. Please make sure MongoDB is running.');
